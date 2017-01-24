@@ -1,4 +1,10 @@
-public class Fraction
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Fraction_Sandbox
+{
+	public class Fraction
 	{
 		// Either dont allow some properties to be changed or recalculate when they do
 		public int wholeNumber { get; }
@@ -16,31 +22,50 @@ public class Fraction
 			this.wholeNumber = 0;
 		}
 
-		// add whole number processing
+		// add whole number processing with negative
 		public Fraction(string fractionText)
 		{
+			// REMOVE THIS AND ADD REAL LOGIC TO CHECK IF POSITIVE
 			char[] delimiters = new char[] { '/', '|', '\\', '-' };
 			string[] nums = fractionText.Split(delimiters);
 
 			// TryParse returns a bool so use that for integrity checks
 			// numer and denom are there becase you cannot pass out directly to a property
-			int numer, denom;
-			int.TryParse(nums[0], out numer);
-			int.TryParse(nums[1], out denom);
+			int wholeNum, numer, denom;
+
+			if (nums.Count() == 2)
+			{
+				wholeNum = 0;
+				int.TryParse(nums[0], out numer);
+				int.TryParse(nums[1], out denom);
+			}
+
+			else if (nums.Count() == 3)
+			{
+				int.TryParse(nums[0], out wholeNum);
+				int.TryParse(nums[1], out numer);
+				int.TryParse(nums[2], out denom);
+			}
+			else
+			{
+				wholeNum = 0;
+				numer = 0;
+				denom = 0;
+			}
+
 			this.numerator = numer;
 			this.denominator = denom;
-			this.fractionText = generateFractionText(this.numerator, this.denominator);
 			this.fractionDecimal = Decimal.Divide(numerator, denominator);
+			generateFractionText();
 		}
 
-		// ADD WHOLE NUMBER INSTANTIATION
 		public Fraction(int numerator, int denominator)
 		{
 			this.wholeNumber = 0;
 			this.numerator = numerator;
 			this.denominator = denominator;
-			this.fractionText = generateFractionText(this.numerator, this.denominator);
 			this.fractionDecimal = Decimal.Divide(numerator, denominator);
+			generateFractionText();
 		}
 
 		public Fraction(int wholeNumber, int numerator, int denominator)
@@ -48,22 +73,30 @@ public class Fraction
 			this.wholeNumber = wholeNumber;
 			this.numerator = numerator;
 			this.denominator = denominator;
-			this.fractionText = generateFractionText(this.numerator, this.denominator);
 			this.fractionDecimal = Decimal.Divide(numerator, denominator);
+			generateFractionText();
 		}
 
-		private void generateFractionText()
+		public override string ToString() { return this.fractionText; }
+		public decimal ToDecimal() { return this.fractionDecimal; }
+
+		void generateFractionText()
 		{
-			if (this.numerator == this.denominator) this.fractionText = "1";
-			else this.fractionText = numerator.ToString() + "/" + denominator.ToString();
-		}
+			string text;
 
-		public static string generateFractionText(int numerator, int denominator)
-		{
-			if (numerator == denominator) return numerator.ToString();
-			else return numerator + "/" + denominator;
-		}
+			if (this.numerator == this.denominator) { text = "1"; }
 
+			if (wholeNumber == 0)
+			{
+				text = numerator.ToString() + "/" + denominator.ToString();
+			}
+			else
+			{
+				text = wholeNumber.ToString() + "~" + numerator.ToString() + "/" + denominator.ToString();
+			}
+		
+			this.fractionText = text;
+		}
 
 		public static Fraction reduce(Fraction myFraction)
 		{
@@ -159,3 +192,4 @@ public class Fraction
 		public Decimal differenceFromaboveFraction;
 		public bool aboveTargetDecimal;
 	}
+}
