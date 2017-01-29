@@ -2,16 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Fraction_Sandbox
+namespace Fraction_Class
 {
 	public class Fraction
 	{
-		// Either dont allow some properties to be changed or recalculate when they do
-		public int wholeNumber { get; }
-		public int numerator { get; }
-		public int denominator { get; }
+		public int integer { get; private set; }
+		public int numerator { get; private set; }
+		public int denominator { get; private set; }
 		public string fractionText { get; private set; }
-		public decimal fractionDecimal { get; }
+		public decimal fractionDecimal { get; private set; }
+
+		public override string ToString() { return this.fractionText; }
+		public decimal ToDecimal() { return this.fractionDecimal; }
 
 		public Fraction()
 		{
@@ -19,18 +21,17 @@ namespace Fraction_Sandbox
 			this.denominator = 1;
 			this.fractionText = "1";
 			this.fractionDecimal = 1;
-			this.wholeNumber = 0;
+			this.integer = 0;
+			GenerateFractionText();
 		}
 
-		// add whole number processing with negative
+		/*
 		public Fraction(string fractionText)
 		{
-			// REMOVE THIS AND ADD REAL LOGIC TO CHECK IF POSITIVE
 			char[] delimiters = new char[] { '/', '|', '\\', '-' };
 			string[] nums = fractionText.Split(delimiters);
 
 			// TryParse returns a bool so use that for integrity checks
-			// numer and denom are there becase you cannot pass out directly to a property
 			int wholeNum, numer, denom;
 
 			if (nums.Count() == 2)
@@ -49,63 +50,251 @@ namespace Fraction_Sandbox
 			else
 			{
 				wholeNum = 0;
-				numer = 0;
-				denom = 0;
+				numer = 1;
+				denom = 1;
 			}
 
-			this.numerator = numer;
-			this.denominator = denom;
-			this.fractionDecimal = Decimal.Divide(numerator, denominator);
-			generateFractionText();
+			if (denom == 0) throw new ArgumentException("Denominator cannot be 0");
+			else
+			{
+				this.wholeNumber = wholeNum;
+				this.numerator = numer;
+				this.denominator = denom;
+				this.fractionDecimal = Decimal.Divide(numerator, denominator);
+				generateFractionText();
+			}
 		}
+		*/
 
 		public Fraction(int numerator, int denominator)
 		{
-			this.wholeNumber = 0;
-			this.numerator = numerator;
-			this.denominator = denominator;
-			this.fractionDecimal = Decimal.Divide(numerator, denominator);
-			generateFractionText();
+			if (denominator == 0) throw new ArgumentException("Denominator cannot be 0");
+			else
+			{
+				this.integer = 0;
+				this.numerator = numerator;
+				this.denominator = denominator;
+				this.fractionDecimal = Decimal.Divide(numerator, denominator);
+				GenerateFractionText();
+			}
 		}
 
 		public Fraction(int wholeNumber, int numerator, int denominator)
 		{
-			this.wholeNumber = wholeNumber;
-			this.numerator = numerator;
-			this.denominator = denominator;
-			this.fractionDecimal = Decimal.Divide(numerator, denominator);
-			generateFractionText();
+			if (denominator == 0) throw new ArgumentException("Denominator cannot be 0");
+			else
+			{
+				this.integer = wholeNumber;
+				this.numerator = numerator;
+				this.denominator = denominator;
+				this.fractionDecimal = Decimal.Divide(numerator, denominator);
+				GenerateFractionText();
+			}
 		}
 
-		public override string ToString() { return this.fractionText; }
-		public decimal ToDecimal() { return this.fractionDecimal; }
-
-		void generateFractionText()
+		private void GenerateFractionText()
 		{
 			string text;
 
 			if (this.numerator == this.denominator) { text = "1"; }
 
-			if (wholeNumber == 0)
+			if (integer == 0)
 			{
 				text = numerator.ToString() + "/" + denominator.ToString();
 			}
 			else
 			{
-				text = wholeNumber.ToString() + "~" + numerator.ToString() + "/" + denominator.ToString();
+				if (this.numerator == 0) text = integer.ToString();
+				else text = integer.ToString() + "~" + numerator.ToString() + "/" + denominator.ToString();
 			}
-		
+
 			this.fractionText = text;
 		}
 
-		public static Fraction reduce(Fraction myFraction)
+		public static Fraction Add(Fraction firstFraction, Fraction secondFraction)
+		{
+			List<Fraction> myFractions = new List<Fraction>() { firstFraction, secondFraction };
+			return Add(myFractions);
+
+		}
+
+		public static Fraction Add(List<Fraction> fractionList)
+		{
+			List<Fraction> lcdFractionList = Fraction.FindLeastCommonDenominator(fractionList);
+
+			int? newNumerator = null;
+			foreach (Fraction currentFraction in lcdFractionList)
+			{
+				Fraction cleanFraction = Fraction.RemoveInteger(currentFraction);
+				if (newNumerator == null) newNumerator = cleanFraction.numerator;
+				else newNumerator += cleanFraction.numerator;
+			}
+
+			return Fraction.Reduce(new Fraction(Convert.ToInt32(newNumerator), lcdFractionList[0].denominator));
+		}
+
+		public static Fraction Subtract(Fraction firstFraction, Fraction secondFraction)
+		{
+			List<Fraction> myFractions = new List<Fraction>() { firstFraction, secondFraction };
+			return Subtract(myFractions);
+
+		}
+
+		public static Fraction Subtract(List<Fraction> fractionList)
+		{
+			List<Fraction> lcdFractionList = Fraction.FindLeastCommonDenominator(fractionList);
+
+			int? newNumerator = null;
+			foreach (Fraction currentFraction in lcdFractionList)
+			{
+				Fraction cleanFraction = Fraction.RemoveInteger(currentFraction);
+				if (newNumerator == null) newNumerator = cleanFraction.numerator;
+				else newNumerator -= cleanFraction.numerator;
+			}
+
+			return Fraction.Reduce(new Fraction(Convert.ToInt32(newNumerator), lcdFractionList[0].denominator));
+		}
+
+		public static Fraction Multiply(Fraction firstFraction, Fraction secondFraction)
+		{
+			List<Fraction> myFractions = new List<Fraction>() { firstFraction, secondFraction };
+			return Multiply(myFractions);
+		}
+
+		public static Fraction Multiply(List<Fraction> fractionList)
+		{
+			int newNumerator = 1;
+			int newDenominator = 1;
+			foreach (Fraction currentFraction in fractionList)
+			{
+				Fraction cleanFraction = Fraction.RemoveInteger(currentFraction);
+				newNumerator *= cleanFraction.numerator;
+				newDenominator *= cleanFraction.denominator;	                                 
+			}
+
+			return Fraction.Reduce(new Fraction(newNumerator, newDenominator));				
+		}
+
+		public static Fraction Divide(Fraction firstFraction, Fraction secondFraction)
+		{
+			List<Fraction> myFractions = new List<Fraction>() { firstFraction, secondFraction };
+			return Divide(myFractions);
+		}
+
+		public static Fraction Divide(List<Fraction> fractionList)
+		{
+			int? newNumerator = null;
+			int? newDenominator = null;
+
+			foreach (Fraction currentFraction in fractionList)
+			{
+				Fraction cleanFraction = Fraction.RemoveInteger(currentFraction);
+
+				if (newNumerator == null)
+				{
+					newNumerator = cleanFraction.numerator;
+					newDenominator = cleanFraction.denominator;
+				}
+				else
+				{
+					newNumerator *= cleanFraction.denominator;
+					newDenominator *= cleanFraction.numerator;
+				}
+			}
+
+			return Fraction.Reduce(new Fraction(Convert.ToInt32(newNumerator), Convert.ToInt32(newDenominator)));
+		}
+
+		public static List<Fraction> FindLeastCommonDenominator(List<Fraction> fractionList)
+		{
+			List<Fraction> finishedList = new List<Fraction>();
+			List<List<int>> primeFactorList = new List<List<int>>();
+
+			foreach (Fraction currentFraction in fractionList)
+			{
+				Fraction finalFraction;
+				if (currentFraction.integer != 0)
+				{
+					finalFraction = new Fraction(currentFraction.denominator * currentFraction.integer
+												   + currentFraction.numerator, currentFraction.denominator);
+				}
+				else finalFraction = currentFraction;
+
+				primeFactorList.Add(Fraction.FindFactors(finalFraction.denominator));
+			}
+
+			int leastCommonDenominator = 1;
+			foreach (List<int> currentFraction1 in primeFactorList)
+			{
+				foreach (int x in currentFraction1)
+				{
+					leastCommonDenominator *= x;
+				}
+			}
+
+			foreach (Fraction startFraction in fractionList)
+			{
+				int newNumerator = ((leastCommonDenominator / startFraction.denominator) * startFraction.numerator);
+				finishedList.Add(new Fraction(newNumerator, leastCommonDenominator));
+			}
+
+			return finishedList;
+		}
+
+		private static List<int> FindFactors(int num)
+		{
+			List<int> result = new List<int>();
+
+			while (num % 2 == 0)
+			{
+				result.Add(2);
+				num /= 2;
+			}
+
+			int factor = 3;
+			while (factor * factor <= num)
+			{
+				if (num % factor == 0)
+				{
+					result.Add(factor);
+					num /= factor;
+				}
+				else
+				{
+					factor += 2;
+				}
+			}
+
+			if (num > 1) result.Add(num);
+
+			return result;
+		}
+
+		public static Fraction RemoveInteger(Fraction myFraction)
+		{
+			if (myFraction.integer != 0)
+			{
+				int newNumerator = myFraction.denominator * myFraction.integer + myFraction.numerator;
+				return new Fraction(newNumerator, myFraction.denominator);
+			}
+			else return myFraction;
+		}
+
+		public static Fraction Reduce(Fraction myFraction)
 		{
 			List<int> numeratorFactors = new List<int>();
 			List<int> denominatorFactors = new List<int>();
 			int numeratorMax = (int)Math.Sqrt(myFraction.numerator);
 			int denominatorMax = (int)Math.Sqrt(myFraction.denominator);
 
-			for (int factor = 1; factor <= numeratorMax; ++factor)
+			if (myFraction.numerator > myFraction.denominator)
+			{
+				int wholeNum = myFraction.numerator / myFraction.denominator;
+				int newNumerator = myFraction.numerator % myFraction.denominator;
+				myFraction = new Fraction(wholeNum, newNumerator, myFraction.denominator);
+			}
+
+			for (int factor = 1; factor <= numeratorMax; factor++)
 			{
 				if (myFraction.numerator % factor == 0)
 				{
@@ -113,7 +302,7 @@ namespace Fraction_Sandbox
 				}
 			}
 
-			for (int factor = 1; factor <= denominatorMax; ++factor)
+			for (int factor = 1; factor <= denominatorMax; factor++)
 			{
 				if (myFraction.denominator % factor == 0)
 				{
@@ -122,19 +311,26 @@ namespace Fraction_Sandbox
 			}
 
 			var commonFactors = numeratorFactors.Intersect(denominatorFactors);
+			Fraction tempFrac;
 			if (commonFactors.Count() == 0)
 			{
-				return myFraction;
+				tempFrac = myFraction;
 			}
 			else
 			{
 				int highestCommonFactor = commonFactors.Max();
-				return new Fraction(myFraction.numerator / highestCommonFactor, myFraction.denominator / highestCommonFactor);
+				tempFrac = new Fraction(myFraction.numerator / highestCommonFactor, myFraction.denominator / highestCommonFactor);
 			}
+
+			if (tempFrac.numerator == 2 && tempFrac.denominator % 2 == 0)
+			{
+				return new Fraction(1, tempFrac.denominator / 2);
+			}
+			else return tempFrac;
 		}
 
 
-		public static DetailClosestFraction findClosestFraction(Fraction precision, Decimal targetDecimal)
+		public static DetailClosestFraction FindClosestFraction(Fraction precision, Decimal targetDecimal)
 		{
 			// Creates obects for the Fraction above and below target decimal
 			// Creates placeholder for final closest fraction
